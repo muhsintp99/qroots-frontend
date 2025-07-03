@@ -5,9 +5,8 @@ import {
   addJob,
   updateJob,
   deleteJob,
+  getJobById,
 } from '../../container/jobs/slice';
-import { getCountry } from '../../container/country/slice';
-import { getCertificates } from '../../container/certificate/slice';
 import {
   Typography,
   Box,
@@ -19,17 +18,17 @@ import {
   CardActions,
   Button,
   useMediaQuery,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import { SearchOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import { useTheme } from '@mui/material/styles';
 import { pageStyles } from '../../../assets/style/commen';
 import AddEdit from './AddEdit';
 import View from './view';
+import { getCountry } from '../../container/country/slice';
+import { getCertificates } from '../../container/certificate/slice';
+import DeleteModel from '../../../utils/defult/DeleteModel';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,27 +39,47 @@ const Index = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, jobId: null });
 
   const dispatch = useDispatch();
-  const { jobs, loading, error } = useSelector((state) => state.jobs || { jobs: [], loading: false, error: null });
-  const { countries, loading: countryLoading, error: countryError } = useSelector((state) => state.country || { countries: [], loading: false, error: null });
-  const { certificates, loading: certificateLoading, error: certificateError } = useSelector((state) => state.certificates || { certificates: [], loading: false, error: null });
+  const { jobs = [], loading = false, error = null } = useSelector((state) => {
+    if (!state.jobs) {
+      console.error('Jobs slice is undefined in Redux store');
+      return { jobs: [], loading: false, error: 'Redux store misconfigured: jobs slice missing' };
+    }
+    return state.jobs;
+  });
+  const { countries = [], loading: countryLoading = false, error: countryError = nul } = useSelector((state) => state.country || { countries: [], loading: false });
+  const { certificates = [], loading: certificateLoading = false, error: certificateError = null } = useSelector((state) => state.certificates || {});
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const title = 'Jobs';
 
   useEffect(() => {
-    console.log('Dispatching getJobs, getCountry, getCertificates');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Dispatching getJobs');
+    }
     dispatch(getJobs());
+  }, [dispatch]);
+
+  useEffect(() => {
     if (!countries.length && !countryLoading) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Dispatching getCountries');
+      }
       dispatch(getCountry());
     }
+  }, [dispatch, countries.length, countryLoading]);
+
+  useEffect(() => {
     if (!certificates.length && !certificateLoading) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Dispatching getCertificates');
+      }
       dispatch(getCertificates());
     }
-  }, [dispatch, countries.length, countryLoading, certificates.length, certificateLoading]);
+  }, [dispatch, certificates.length, certificateLoading]);
 
   const handleSearchChange = useCallback((e) => {
-    setSearchQuery(e.target.value);
+    setSearchQuery(e.target.value.trim());
   }, []);
 
   const handleOpenDialog = useCallback((job = null) => {
@@ -73,8 +92,8 @@ const Index = () => {
     setSelectedJob(null);
   }, []);
 
-  const handleView = useCallback((data) => {
-    setViewData(data);
+  const handleView = useCallback((job) => {
+    setViewData(job);
     setIsViewOpen(true);
   }, []);
 
@@ -83,7 +102,7 @@ const Index = () => {
     setViewData(null);
   }, []);
 
-  const handleOpenDeleteDialog = useCallback((jobId) => {
+ const handleOpenDeleteDialog = useCallback((jobId) => {
     setDeleteDialog({ open: true, jobId });
   }, []);
 
@@ -96,13 +115,13 @@ const Index = () => {
       dispatch(deleteJob(jobId));
       handleCloseDeleteDialog();
     },
-    [dispatch]
+    [dispatch, handleCloseDeleteDialog]
   );
 
   const handleSubmit = useCallback(
     (values) => {
-      if (selectedJob && selectedJob._id) {
-        dispatch(updateJob({ _id: selectedJob._id, ...values }));
+      if (selectedJob && selectedJob.jobId) {
+        dispatch(updateJob({ jobId: selectedJob.jobId, ...values }));
       } else {
         dispatch(addJob(values));
       }
@@ -112,28 +131,25 @@ const Index = () => {
   );
 
   const filteredJobs = useMemo(() => {
-    const validJobs = Array.isArray(jobs)
-      ? jobs.filter((item) => item && typeof item === 'object')
-      : [];
-    return validJobs.filter((item) => {
-      const search = searchQuery.toLowerCase().trim();
+    if (!Array.isArray(jobs)) return [];
+    const search = searchQuery.toLowerCase().trim();
+    return jobs.filter((item) => {
+      if (!item || typeof item !== 'object') return false;
       return (
-        String(item.jobId || '').toLowerCase().includes(search) ||
-        String(item.title || '').toLowerCase().includes(search) ||
-        String(item.company || '').toLowerCase().includes(search) ||
-        String(item.location || '').toLowerCase().includes(search) ||
-        String(item.country?.name || '').toLowerCase().includes(search) ||
-        String(item.certificate?.title || '').toLowerCase().includes(search) ||
-        String(item.jobType || '').toLowerCase().includes(search) ||
-        item.skills?.some((skill) =>
-          String(skill || '').toLowerCase().includes(search)
-        )
+        (item.jobId || '').toLowerCase().includes(search) ||
+        (item.title || '').toLowerCase().includes(search) ||
+        (item.company || '').toLowerCase().includes(search) ||
+        (item.location || '').toLowerCase().includes(search) ||
+        (item.country?.name || '').toLowerCase().includes(search) ||
+        (item.certificate?.title || '').toLowerCase().includes(search) ||
+        (item.jobType || '').toLowerCase().includes(search) ||
+        (item.skills || []).some((skill) => (skill || '').toLowerCase().includes(search))
       );
     });
   }, [jobs, searchQuery]);
 
   return (
-    <Box sx={pageStyles.mainBox}>
+    <Box sx={pageStyles.mainBox} role="main" aria-label="Job Listings">
       <Typography variant="h4" sx={pageStyles.title}>{title}</Typography>
       <Typography component="p" sx={pageStyles.countList}>
         <span style={{ color: '#234155', fontWeight: 600 }}>{filteredJobs.length} {title}</span> are listed below
@@ -164,7 +180,7 @@ const Index = () => {
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <SearchOutlined style={pageStyles.newButtonIcon} />
+                <SearchOutlined style={pageStyles.newButtonIcon} aria-hidden="true" />
               </InputAdornment>
             ),
           }}
@@ -179,24 +195,26 @@ const Index = () => {
               padding: '8px 12px',
             },
           }}
+          aria-label="Search jobs"
         />
         <Button
           variant="contained"
-          onClick={handleOpenDialog}
+          onClick={() => handleOpenDialog()}
           sx={{ mt: { xs: 2, sm: 0 }, ml: { sm: 2 } }}
+          aria-label="Add new job"
         >
           Add Job
         </Button>
       </Box>
 
       {(loading || countryLoading || certificateLoading) && (
-        <Typography variant="body2" sx={{ mt: 2 }}>
-          Loading jobs...
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <CircularProgress aria-label="Loading jobs" />
+        </Box>
       )}
 
       {!loading && filteredJobs.length === 0 && (
-        <Typography variant="body2" sx={{ mt: 2 }}>
+        <Typography variant="body2" sx={{ mt: 2 }} aria-live="polite">
           No jobs found.
         </Typography>
       )}
@@ -204,7 +222,7 @@ const Index = () => {
       <Grid container spacing={3} sx={{ mt: 2 }}>
         {filteredJobs.map((job) => (
           <Grid item xs={12} sm={6} md={4} key={job.jobId}>
-            <Card sx={{ boxShadow: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Card sx={{ boxShadow: 3, height: '100%', display: 'flex', flexDirection: 'column' }} aria-label={`Job: ${job.title || 'N/A'}`}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Typography variant="h5">{job.title || 'N/A'}</Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -231,10 +249,10 @@ const Index = () => {
                 {job.skills?.length > 0 && (
                   <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {job.skills.slice(0, 3).map((skill, index) => (
-                      <Chip key={index} label={skill || 'N/A'} size="small" />
+                      <Chip key={index} label={skill || 'N/A'} size="small" aria-label={`Skill: ${skill || 'N/A'}`} />
                     ))}
                     {job.skills.length > 3 && (
-                      <Chip label={`+${job.skills.length - 3}`} size="small" />
+                      <Chip label={`+${job.skills.length - 3}`} size="small" aria-label={`Additional skills: ${job.skills.length - 3}`} />
                     )}
                   </Box>
                 )}
@@ -244,6 +262,7 @@ const Index = () => {
                   size="small"
                   startIcon={<EyeOutlined />}
                   onClick={() => handleView(job)}
+                  aria-label={`View job ${job.title || 'details'}`}
                 >
                   View
                 </Button>
@@ -251,14 +270,16 @@ const Index = () => {
                   size="small"
                   startIcon={<EditOutlined />}
                   onClick={() => handleOpenDialog(job)}
+                  aria-label={`Edit job ${job.title || ''}`}
                 >
                   Edit
                 </Button>
                 <Button
                   size="small"
                   startIcon={<DeleteOutlined />}
-                  onClick={() => handleOpenDeleteDialog(job._id)}
+                  onClick={() => handleOpenDeleteDialog(job.jobId)}
                   color="error"
+                  aria-label={`Delete job ${job.title || ''}`}
                 >
                   Delete
                 </Button>
@@ -273,6 +294,7 @@ const Index = () => {
         onClose={handleCloseDialog}
         onSubmit={handleSubmit}
         editData={selectedJob}
+        countries={countries}
         certificates={certificates}
       />
 
@@ -284,20 +306,15 @@ const Index = () => {
         />
       )}
 
-      <Dialog open={deleteDialog.open} onClose={handleCloseDeleteDialog}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to permanently delete this job? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={() => handleDelete(deleteDialog.jobId)} color="error">
-            Delete Permanently
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteModel
+        open={deleteDialog.open}
+        handleClose={handleCloseDeleteDialog}
+        onConfirm={() => {
+          handleDelete(deleteDialog.jobId);
+        }}
+        title="Delete Job"
+        data={filteredJobs.find((job) => job.jobId === deleteDialog.jobId)}
+      />
     </Box>
   );
 };

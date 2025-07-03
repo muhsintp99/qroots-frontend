@@ -4,78 +4,155 @@ const jobSlice = createSlice({
   name: 'jobs',
   initialState: {
     jobs: [],
-    selectedJob: null,
+    selectedJob: {},
     jobCount: 0,
     loading: false,
     error: null,
   },
   reducers: {
-    clearError: (state) => { state.error = null },
-    clearSelectedJob: (state) => { state.selectedJob = null },
-
-    addJob: (state) => { state.loading = true; state.error = null },
+    // Create job
+    addJob: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
     addJobSuccess: (state, action) => {
       state.loading = false;
-      state.jobs.push(action.payload.data);
-      state.jobCount = action.payload.count;
+      state.jobs.push(action.payload);
+      state.error = null;
     },
-    addJobFail: (state, action) => { state.loading = false; state.error = action.payload },
+    addJobFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload || 'Failed to add job';
+    },
 
-    getJobs: (state) => { state.loading = true; state.error = null },
+    // Get all jobs
+    getJobs: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
     getJobsSuccess: (state, action) => {
       state.loading = false;
-      state.jobs = action.payload.data;
+      state.jobs = Array.isArray(action.payload) ? action.payload : [];
+      state.error = null;
     },
     getJobsFail: (state, action) => {
       state.loading = false;
-      state.error = action.payload;
+      state.error = action.payload || 'Failed to fetch jobs';
     },
 
-    getJobById: (state) => { state.loading = true; state.error = null },
+    // Get job by jobId
+    getJobById: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
     getJobByIdSuccess: (state, action) => {
       state.loading = false;
-      state.selectedJob = action.payload;
+      state.selectedJob = action.payload || {};
+      state.error = null;
     },
     getJobByIdFail: (state, action) => {
       state.loading = false;
-      state.error = action.payload;
-      state.selectedJob = null;
+      state.error = action.payload || 'Failed to fetch job';
     },
 
-    updateJob: (state) => { state.loading = true; state.error = null },
+    // Get total count
+    totalCount: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    totalCountSuccess: (state, action) => {
+      state.loading = false;
+      state.jobCount = action.payload?.count ?? 0;
+      state.error = null;
+    },
+    totalCountFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload || 'Failed to fetch job count';
+    },
+
+    // Update job
+    updateJob: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
     updateJobSuccess: (state, action) => {
       state.loading = false;
       const updated = action.payload;
-      state.jobs = state.jobs.map((item) =>
-        item._id === updated._id ? updated : item
-      );
-      if (state.selectedJob?._id === updated._id) {
-        state.selectedJob = updated;
+      if (updated?.jobId) {
+        state.jobs = state.jobs.map((item) =>
+          item.jobId === updated.jobId ? updated : item
+        );
+        if (state.selectedJob?.jobId === updated.jobId) {
+          state.selectedJob = updated;
+        }
       }
+      state.error = null;
     },
-    updateJobFail: (state, action) => { state.loading = false; state.error = action.payload },
-
-    deleteJob: (state) => { state.loading = true; state.error = null },
-    deleteJobSuccess: (state, action) => {
+    updateJobFail: (state, action) => {
       state.loading = false;
-      const deletedId = action.payload;
-      state.jobs = state.jobs.filter(job => job._id !== deletedId);
-      state.jobCount = Math.max(0, state.jobCount - 1);
-      if (state.selectedJob?._id === deletedId) {
-        state.selectedJob = null;
-      }
+      state.error = action.payload || 'Failed to update job';
     },
-    deleteJobFail: (state, action) => { state.loading = false; state.error = action.payload },
-  }
+
+    // Delete job (soft)
+    deleteJob: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    deleteJobSuccess: (state, action) => {
+      const updated = action.payload;
+      state.loading = false;
+      if (updated?.jobId) {
+        state.jobs = state.jobs.map((item) =>
+          item.jobId === updated.jobId ? updated : item
+        );
+        if (state.selectedJob?.jobId === updated.jobId) {
+          state.selectedJob = updated;
+        }
+      }
+      state.error = null;
+    },
+    deleteJobFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload || 'Failed to delete job';
+    },
+
+    // Reset error
+    resetError: (state) => {
+      state.error = null;
+    },
+
+    // Reset state
+    resetState: (state) => {
+      state.jobs = [];
+      state.selectedJob = {};
+      state.jobCount = 0;
+      state.loading = false;
+      state.error = null;
+    },
+  },
 });
 
 export const {
-  clearError, clearSelectedJob,
-  addJob, addJobSuccess, addJobFail,
-  getJobs, getJobsSuccess, getJobsFail,
-  getJobById, getJobByIdSuccess, getJobByIdFail,
-  updateJob, updateJobSuccess, updateJobFail,
-  deleteJob, deleteJobSuccess, deleteJobFail
+  addJob,
+  addJobSuccess,
+  addJobFail,
+  getJobs,
+  getJobsSuccess,
+  getJobsFail,
+  getJobById,
+  getJobByIdSuccess,
+  getJobByIdFail,
+  totalCount,
+  totalCountSuccess,
+  totalCountFail,
+  updateJob,
+  updateJobSuccess,
+  updateJobFail,
+  deleteJob,
+  deleteJobSuccess,
+  deleteJobFail,
+  resetError,
+  resetState,
 } = jobSlice.actions;
 
 export default jobSlice.reducer;

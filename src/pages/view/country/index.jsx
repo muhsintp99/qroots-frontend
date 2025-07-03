@@ -37,6 +37,7 @@ const Index = () => {
   const [editData, setEditData] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
+  const [resetForm, setResetForm] = useState(null);
 
   const dispatch = useDispatch();
   const { countries, loading } = useSelector((state) => state.country || { countries: [], loading: false });
@@ -69,15 +70,6 @@ const Index = () => {
     setOpenDeleteDialog(true);
   };
 
-  // const handleDeleteConfirm = (data) => {
-  //   if (data && data._id) {
-  //     dispatch(deleteCountry(data._id));
-  //     setOpenDeleteDialog(false);
-  //     setDeleteData(null);
-  //     dispatch(getCountry());
-  //   }
-  // };
-
   const handleDeleteConfirm = (data) => {
     if (data && data.name?.toLowerCase() === 'india') {
       alert('Cannot delete India');
@@ -94,18 +86,16 @@ const Index = () => {
     }
   };
 
-
   const handleSubmitForm = (values, { setSubmitting, resetForm }) => {
     console.log('Form Values:', values);
 
     const payload = {
-      name: values.countryName || values.name || '',
-      code: values.code || values.countryCode || '',
+      name: values.name || '',
+      code: values.code || '',
       isoCode: values.isoCode || '',
       dialCode: values.dialCode || '',
       currency: values.currency || '',
-      image: values.image || '',
-      // image is removed because it's a File object (non-serializable)
+      image: values.image || ''
     };
 
     if (editData && editData._id) {
@@ -118,7 +108,6 @@ const Index = () => {
     setSubmitting(false);
     resetForm();
     setOpenDialog(false);
-    setPreviewImage(null);
     setEditData(null);
   };
 
@@ -285,12 +274,13 @@ const Index = () => {
       <AddEdit
         open={openDialog}
         onClose={() => {
-          formik.resetForm();
+          if (resetForm) resetForm();
           setOpenDialog(false);
           setEditData(null);
         }}
         onSubmit={handleSubmitForm}
         editData={memoizedEditData}
+        resetFormCallback={(fn) => setResetForm(fn)}
       />
 
       <View

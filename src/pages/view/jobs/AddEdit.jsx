@@ -27,26 +27,27 @@ import { getCertificates } from '../../container/certificate/slice';
 const MAX_SKILLS = 10;
 
 const validationSchema = Yup.object({
-  title: Yup.string().required('Job title is required'),
-  description: Yup.string().required('Description is required'),
-  company: Yup.string().required('Company is required'),
-  location: Yup.string().required('Location is required'),
-  country: Yup.string().required('Country is required'),
+  title: Yup.string().trim().min(1, 'Job title is required').required('Job title is required'),
+  description: Yup.string().trim().min(1, 'Description is required').required('Description is required'),
+  company: Yup.string().trim().min(1, 'Company is required').required('Company is required'),
+  location: Yup.string().trim().min(1, 'Location is required').required('Location is required'),
+  country: Yup.string().trim().min(1, 'Country is required').required('Country is required'),
   certificate: Yup.string().required('Certificate is required'),
-  salary: Yup.number().positive('Salary must be positive'),
-  jobType: Yup.string().required('Job type is required'),
-  experience: Yup.string(),
+  salary: Yup.number().min(0, 'Salary cannot be negative').nullable(),
+  jobType: Yup.string().trim().min(1, 'Job type is required').required('Job type is required'),
+  experience: Yup.string().trim().nullable(),
   skills: Yup.array()
     .of(Yup.string().trim().min(1, 'Skill cannot be empty'))
+    .min(1, 'At least one skill is required')
     .max(MAX_SKILLS, `Maximum ${MAX_SKILLS} skills allowed`),
   isActive: Yup.boolean().required('Status is required'),
 });
 
-const AddEdit = ({ open, onClose, onSubmit, editData }) => {
-  const isEdit = Boolean(editData && editData._id);
+const AddEdit = ({ open, onClose, onSubmit, editData, countries, certificates }) => {
+  const isEdit = Boolean(editData && editData.jobId);
   const dispatch = useDispatch();
-  const { countries, loading: countryLoading, error: countryError } = useSelector((state) => state.country || { countries: [], loading: false, error: null });
-  const { certificates, loading: certificateLoading, error: certificateError } = useSelector((state) => state.certificates || { certificates: [], loading: false, error: null });
+  const { loading: countryLoading = false, error: countryError = null } = useSelector((state) => state.countries || {});
+  const { loading: certificateLoading = false, error: certificateError = null } = useSelector((state) => state.certificates || {});
   const [submissionError, setSubmissionError] = useState(null);
 
   useEffect(() => {
@@ -56,6 +57,9 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
     if (open && !certificates.length && !certificateLoading) {
       dispatch(getCertificates());
     }
+    return () => {
+      setSubmissionError(null);
+    };
   }, [dispatch, open, countries.length, countryLoading, certificates.length, certificateLoading]);
 
   const initialValues = {
@@ -72,8 +76,6 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
     isActive: editData?.isActive !== undefined ? editData.isActive : true,
   };
 
-  const isCertificateValid = editData?.certificate?._id && certificates.some(c => c._id === editData.certificate._id);
-
   return (
     <Dialog
       open={open}
@@ -81,8 +83,11 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
       maxWidth="md"
       fullWidth
       disableEnforceFocus
+      aria-labelledby={isEdit ? 'edit-job-dialog-title' : 'add-job-dialog-title'}
     >
-      <DialogTitle>{isEdit ? 'Edit Job' : 'Add New Job'}</DialogTitle>
+      <DialogTitle id={isEdit ? 'edit-job-dialog-title' : 'add-job-dialog-title'}>
+        {isEdit ? 'Edit Job' : 'Add New Job'}
+      </DialogTitle>
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
@@ -90,30 +95,43 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
         validateOnBlur={true}
         onSubmit={(values, { setSubmitting }) => {
           setSubmissionError(null);
+          if (!values.certificate) {
+            setSubmissionError('Please select a valid certificate.');
+            setSubmitting(false);
+            return;
+          }
           const cleanedSkills = (values.skills || [])
-            .map(skill => skill.trim().toLowerCase())
+            .map((skill) => skill.trim())
             .filter((skill, index, self) => skill && self.indexOf(skill) === index);
 
           const payload = {
-            title: values.title,
-            description: values.description,
-            company: values.company,
-            location: values.location,
+            title: values.title.trim(),
+            description: values.description.trim(),
+            company: values.company.trim(),
+            location: values.location.trim(),
             country: values.country,
             certificate: values.certificate,
             salary: values.salary ? Number(values.salary) : null,
             jobType: values.jobType,
-            experience: values.experience || null,
+            experience: values.experience?.trim() || null,
             skills: cleanedSkills,
             isActive: values.isActive,
           };
+
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('Submitting payload:', payload);
+          }
 
           if (isEdit) {
             const changedFields = {};
             Object.keys(payload).forEach((key) => {
               const newValue = payload[key];
               const oldValue = editData[key];
-              if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+              if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+                if (newValue.length !== oldValue.length || newValue.some((v, i) => v !== oldValue[i])) {
+                  changedFields[key] = newValue;
+                }
+              } else if (newValue !== oldValue) {
                 changedFields[key] = newValue;
               }
             });
@@ -124,7 +142,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
               return;
             }
 
-            onSubmit({ _id: editData._id, ...changedFields });
+            onSubmit({ jobId: editData.jobId, ...changedFields });
           } else {
             onSubmit(payload);
           }
@@ -136,38 +154,33 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
           <Form>
             <DialogContent>
               {submissionError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 2 }} aria-live="assertive">
                   {submissionError}
                 </Alert>
               )}
               {countryError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 2 }} aria-live="assertive">
                   Error loading countries: {countryError}
                 </Alert>
               )}
               {certificateError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  Error loading certificates: {certificateError}
-                </Alert>
-              )}
-              {isEdit && editData?.certificate?._id && !isCertificateValid && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  Selected certificate is invalid or no longer available. Please select a new certificate.
+                <Alert severity="error" sx={{ mb: 2 }} aria-live="assertive">
+                  Error loading certificates: {certificateError}. Please try again or contact support.
                 </Alert>
               )}
               {!countryLoading && countries.length === 0 && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  No countries available. Please try again later.
+                <Alert severity="warning" sx={{ mb: 2 }} aria-live="assertive">
+                  No countries available. Please try again later or contact support.
                 </Alert>
               )}
               {!certificateLoading && certificates.length === 0 && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  No certificates available. Please add a certificate first.
+                <Alert severity="error" sx={{ mb: 2 }} aria-live="assertive">
+                  No certificates available. Please add a certificate before creating a job.
                 </Alert>
               )}
               {(isSubmitting || countryLoading || certificateLoading) && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                  <CircularProgress size={24} />
+                  <CircularProgress size={24} aria-label="Loading form data" />
                 </Box>
               )}
               <Grid container spacing={3}>
@@ -179,6 +192,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                       fullWidth
                       variant="outlined"
                       disabled
+                      aria-readonly="true"
                     />
                   </Grid>
                 )}
@@ -191,6 +205,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     variant="outlined"
                     error={touched.title && Boolean(errors.title)}
                     helperText={touched.title && errors.title}
+                    aria-required="true"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -202,6 +217,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     variant="outlined"
                     error={touched.company && Boolean(errors.company)}
                     helperText={touched.company && errors.company}
+                    aria-required="true"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -213,6 +229,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     variant="outlined"
                     error={touched.location && Boolean(errors.location)}
                     helperText={touched.location && errors.location}
+                    aria-required="true"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -226,8 +243,9 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                       value={values.country || ''}
                       onChange={(e) => setFieldValue('country', e.target.value)}
                       disabled={countryLoading}
+                      aria-required="true"
                     >
-                      <MenuItem value=""><em>{countryLoading ? 'Loading countries...' : 'Select a country'}</em></MenuItem>
+                      <MenuItem value="">{countryLoading ? 'Loading countries...' : 'Select a country'}</MenuItem>
                       {countries.map((country) => (
                         <MenuItem key={country._id} value={country._id}>
                           {country.name}
@@ -253,8 +271,9 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                       value={values.certificate || ''}
                       onChange={(e) => setFieldValue('certificate', e.target.value)}
                       disabled={certificateLoading || certificates.length === 0}
+                      aria-required="true"
                     >
-                      <MenuItem value=""><em>{certificateLoading ? 'Loading certificates...' : 'Select a certificate'}</em></MenuItem>
+                      <MenuItem value="">{certificateLoading ? 'Loading certificates...' : 'Select a certificate'}</MenuItem>
                       {certificates.map((certificate) => (
                         <MenuItem key={certificate._id} value={certificate._id}>
                           {certificate.title}
@@ -279,6 +298,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     type="number"
                     error={touched.salary && Boolean(errors.salary)}
                     helperText={touched.salary && errors.salary}
+                    inputProps={{ min: 0 }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -291,6 +311,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     select
                     error={touched.jobType && Boolean(errors.jobType)}
                     helperText={touched.jobType && errors.jobType}
+                    aria-required="true"
                   >
                     <MenuItem value="Full-Time">Full-Time</MenuItem>
                     <MenuItem value="Part-Time">Part-Time</MenuItem>
@@ -318,8 +339,13 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     freeSolo
                     value={values.skills || []}
                     onChange={(event, newValue) => {
+                      if (process.env.NODE_ENV !== 'production') {
+                        console.log('Skills updated:', newValue);
+                      }
                       if (newValue.length <= MAX_SKILLS) {
                         setFieldValue('skills', newValue);
+                      } else {
+                        setFieldValue('skills', newValue.slice(0, MAX_SKILLS));
                       }
                     }}
                     renderTags={(value, getTagProps) =>
@@ -331,6 +357,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                             variant="outlined"
                             label={option}
                             {...chipProps}
+                            aria-label={`Skill: ${option}`}
                           />
                         );
                       })
@@ -339,17 +366,35 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                       <TextField
                         {...params}
                         variant="outlined"
-                        label="Skills"
-                        placeholder="Add skills (press Enter to add)"
+                        label="Skills *"
+                        placeholder="Type a skill and press Enter"
                         error={touched.skills && Boolean(errors.skills)}
                         helperText={
                           touched.skills && errors.skills
                             ? errors.skills
-                            : `Type a skill and press Enter (max ${MAX_SKILLS})`
+                            : `Type a skill and press Enter (max ${MAX_SKILLS}, ${values.skills?.length || 0}/${MAX_SKILLS})`
                         }
+                        aria-describedby="skills-helper-text"
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && event.target.value && values.skills.length < MAX_SKILLS) {
+                            const newSkill = event.target.value.trim();
+                            if (newSkill && !values.skills.includes(newSkill)) {
+                              setFieldValue('skills', [...values.skills, newSkill]);
+                              if (process.env.NODE_ENV !== 'production') {
+                                console.log('Added skill:', newSkill);
+                              }
+                            }
+                            event.target.value = ''; // Clear input after adding
+                          }
+                        }}
                       />
                     )}
                   />
+                  <Typography id="skills-helper-text" sx={{ display: 'none' }}>
+                    {touched.skills && errors.skills
+                      ? errors.skills
+                      : `Type a skill and press Enter (max ${MAX_SKILLS}, ${values.skills?.length || 0}/${MAX_SKILLS})`}
+                  </Typography>
                 </Grid>
                 <Grid item xs={12}>
                   <Field
@@ -362,6 +407,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     rows={4}
                     error={touched.description && Boolean(errors.description)}
                     helperText={touched.description && errors.description}
+                    aria-required="true"
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -374,6 +420,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                     select
                     error={touched.isActive && Boolean(errors.isActive)}
                     helperText={touched.isActive && errors.isActive}
+                    aria-required="true"
                   >
                     <MenuItem value={true}>Active</MenuItem>
                     <MenuItem value={false}>Inactive</MenuItem>
@@ -382,14 +429,15 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
-              <Button onClick={onClose} variant="outlined">
+              <Button onClick={onClose} variant="outlined" aria-label="Cancel form">
                 Cancel
               </Button>
               <Button
                 type="submit"
                 variant="contained"
-                disabled={isSubmitting || countryLoading || certificateLoading || certificates.length === 0}
+                disabled={isSubmitting || countryLoading || certificateLoading || certificates.length === 0 || !values.certificate}
                 sx={{ ml: 2 }}
+                aria-label={isEdit ? 'Update job' : 'Add job'}
               >
                 {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}
               </Button>

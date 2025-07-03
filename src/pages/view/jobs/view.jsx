@@ -11,9 +11,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import { viewDrawerStyles } from '../../../assets/style/commen'; // Fixed typo
-
-const capitalize = (str) => str?.toLowerCase()?.replace(/\b\w/g, (c) => c.toUpperCase()) || 'N/A';
+import { viewDrawerStyles } from '../../../assets/style/commen.js';
 
 const View = ({ open, onClose, data }) => {
   return (
@@ -26,14 +24,15 @@ const View = ({ open, onClose, data }) => {
           width: { xs: '90%', sm: '50%', md: '40%' },
         },
       }}
+      aria-labelledby="job-details-title"
     >
-      <Box sx={viewDrawerStyles.mainBox}>
+      <Box sx={viewDrawerStyles.mainBox} role="dialog" aria-label="Job Details Drawer">
         <Box sx={viewDrawerStyles.head}>
-          <IconButton onClick={onClose} sx={viewDrawerStyles.closeButton}>
+          <IconButton onClick={onClose} sx={viewDrawerStyles.closeButton} aria-label="Close job details">
             <CloseIcon />
           </IconButton>
           <Grid sx={viewDrawerStyles.global}>
-            <Typography sx={viewDrawerStyles.drawerTitle}>Job Details</Typography>
+            <Typography id="job-details-title" sx={viewDrawerStyles.drawerTitle}>Job Details</Typography>
           </Grid>
         </Box>
 
@@ -41,56 +40,56 @@ const View = ({ open, onClose, data }) => {
           <Grid container sx={viewDrawerStyles.dataContainer} mt={2}>
             <Grid item xs={12} md={6}>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Job ID</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.jobId || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Title</strong></Typography>
-                  <Typography sx={viewDrawerStyles.value}>{capitalize(data.title)}</Typography>
+                  <Typography sx={viewDrawerStyles.value}>{data.title || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Company</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.company || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Location</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.location || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Country</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.country?.name || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Certificate</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.certificate?.title || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Job Type</strong></Typography>
-                  <Typography sx={viewDrawerStyles.value}>{capitalize(data.jobType) || 'N/A'}</Typography>
+                  <Typography sx={viewDrawerStyles.value}>{data.jobType || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Salary</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.salary ? `$${data.salary.toLocaleString()}` : 'N/A'}</Typography>
@@ -99,35 +98,35 @@ const View = ({ open, onClose, data }) => {
             </Grid>
             <Grid item xs={12} md={6}>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Experience</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.experience || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Posted By</strong></Typography>
-                  <Typography sx={viewDrawerStyles.value}>{data.postedBy?.name || data.postedBy?.email || 'N/A'}</Typography>
+                  <Typography sx={viewDrawerStyles.value}>{data.postedBy?.username || data.postedBy?.email || 'N/A'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Status</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.isActive ? 'Active' : 'Inactive'}</Typography>
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Skills</strong></Typography>
                   {data.skills?.length > 0 ? (
-                    <List dense>
+                    <List dense aria-label="Skills list">
                       {data.skills.map((skill, index) => (
                         <ListItem key={index}>
-                          <ListItemText primary={skill || 'N/A'} />
+                          <ListItemText primary={`# ${skill || 'N/A'}`} />
                         </ListItem>
                       ))}
                     </List>
@@ -137,7 +136,7 @@ const View = ({ open, onClose, data }) => {
                 </Box>
               </Box>
               <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" />
+                <ArrowRightIcon fontSize="small" aria-hidden="true" />
                 <Box>
                   <Typography sx={viewDrawerStyles.label}><strong>Description</strong></Typography>
                   <Typography sx={viewDrawerStyles.value}>{data.description || 'N/A'}</Typography>
@@ -146,7 +145,7 @@ const View = ({ open, onClose, data }) => {
             </Grid>
           </Grid>
         ) : (
-          <Typography sx={{ p: 2 }}>No data available</Typography>
+          <Typography sx={{ p: 2 }} aria-live="polite">No data available</Typography>
         )}
       </Box>
     </Drawer>

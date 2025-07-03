@@ -27,42 +27,62 @@ const validationSchema = Yup.object({
       { message: 'Enter a valid URL', excludeEmptyString: true }
     ),
   image: Yup.mixed()
-    .required('Image is required')
-    .test('fileType', 'Only image files are allowed (jpeg, jpg, png, gif)', (value) => {
-      if (!value) return false; // Image is required
+    .test('fileOrUrl', 'Image is required', (value, context) => {
+      const isEdit = Boolean(context.parent._id); // Check if in edit mode
+      if (isEdit && context.parent.existingImage) return true; // Allow existing image URL
+      if (!value) return false; // Require file for new blog
       return ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(value.type);
+    })
+    .test('fileSize', 'Image size must be less than 5MB', (value) => {
+      if (!value || typeof value === 'string') return true; // Skip for URLs or no file
+      return value.size <= 5 * 1024 * 1024; // 5MB limit
     }),
   createdBy: Yup.string().default('admin'),
   updatedBy: Yup.string().default('admin'),
-  isVisible: Yup.boolean().default(true), // Added visibility validation
+  isVisible: Yup.boolean().default(true),
 });
 
 const AddEdit = ({ open, onClose, onSubmit, editData }) => {
   const isEdit = Boolean(editData && editData._id);
   const [previewImage, setPreviewImage] = useState(null);
+  const [fileError, setFileError] = useState(null);
 
   useEffect(() => {
     if (editData?.image) {
-      setPreviewImage(editData.image);
+      setPreviewImage(editData.image); // Set preview to existing image URL
+      setFileError(null); // Clear file error in edit mode
     } else {
       setPreviewImage(null);
+      setFileError(null);
     }
   }, [editData]);
 
   const initialValues = {
+    _id: editData?._id || '',
     title: editData?.title || '',
     shortDesc: editData?.shortDesc || '',
     fullDesc: editData?.fullDesc || '',
     link: editData?.link || '',
     createdBy: editData?.createdBy || 'admin',
     updatedBy: editData?.updatedBy || 'admin',
-    isVisible: editData?.isVisible !== undefined ? editData.isVisible : true, // Added visibility field
-    image: null
+    isVisible: editData?.isVisible !== undefined ? editData.isVisible : true,
+    image: null,
+    existingImage: editData?.image || null,
   };
 
   const handleSubmit = (values, { setSubmitting }) => {
-    console.log('Form submission values:', values);
-    onSubmit(values);
+    const payload = {
+      title: values.title,
+      shortDesc: values.shortDesc,
+      fullDesc: values.fullDesc,
+      link: values.link,
+      createdBy: values.createdBy,
+      updatedBy: values.updatedBy,
+      isVisible: values.isVisible,
+      image: values.image || values.existingImage,
+    };
+
+    onSubmit(payload);
     setSubmitting(false);
   };
 
@@ -136,7 +156,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                 </Grid>
 
                 {/* Visibility Checkbox */}
-                <Grid item xs={12} sm={6}>
+                {/* <Grid item xs={12} sm={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
                     <FormControlLabel
                       control={
@@ -161,28 +181,35 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                   <Typography variant="caption" color="textSecondary" sx={{ ml: 4, display: 'block' }}>
                     {values.isVisible ? 'Blog will be published and visible to users' : 'Blog will be saved as draft'}
                   </Typography>
-                </Grid>
+                </Grid> */}
 
                 {/* Image Upload */}
                 <Grid item xs={12} sm={6}>
                   <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      Blog Image *
+                      Blog Image {isEdit ? '' : '*'}
                     </Typography>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(event) => {
                         const file = event.currentTarget.files[0];
-                        setFieldValue('image', file);
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setPreviewImage(reader.result);
-                          };
-                          reader.readAsDataURL(file);
+                        setFileError(null); // Reset error
+                        if (file && file.size > 5 * 1024 * 1024) {
+                          setFileError('Image size must be less than 5MB');
+                          setFieldValue('image', null);
+                          setPreviewImage(values.existingImage || null);
                         } else {
-                          setPreviewImage(null);
+                          setFieldValue('image', file);
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setPreviewImage(reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          } else {
+                            setPreviewImage(values.existingImage || null);
+                          }
                         }
                       }}
                       style={{
@@ -192,9 +219,9 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
                         borderRadius: '4px'
                       }}
                     />
-                    {touched.image && errors.image && (
+                    {(touched.image && errors.image || fileError) && (
                       <Typography color="error" variant="caption">
-                        {errors.image}
+                        {errors.image || fileError}
                       </Typography>
                     )}
                   </Box>
@@ -231,7 +258,7 @@ const AddEdit = ({ open, onClose, onSubmit, editData }) => {
               <Button
                 type="submit"
                 variant="contained"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !!fileError}
                 sx={{ ml: 2 }}
               >
                 {isSubmitting ? 'Saving...' : isEdit ? 'Update' : 'Add'}

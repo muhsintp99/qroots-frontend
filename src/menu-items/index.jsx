@@ -1,7 +1,7 @@
 // project import
 import dashboard from './dashboard';
 import utilities from './utilities';
-import support from './support';
+// import support from './support';
 import enquiries from './enquries';
 // import college from './colleges';
 import jobs from './jobs';
@@ -14,7 +14,7 @@ const menuItems = {
     jobs,
     enquiries,
     utilities,
-    support,
+    // support,
     // college
   ]
 };

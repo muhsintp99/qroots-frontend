@@ -45,7 +45,7 @@ const DeleteModel = ({ open, onClose, data, onConfirm }) => {
       <DialogContent>
         <DialogContentText id="delete-dialog-description">
           Are you sure you want to delete{' '}
-          <strong>{data?.name || data?.college?.name || 'This Item'}</strong>? This action cannot be undone.
+          <strong>{data?.name || data?.college?.name || data?.title || data?.enqNo || 'This Item'}</strong>? This action cannot be undone.
         </DialogContentText>
       </DialogContent>
       <DialogActions>
