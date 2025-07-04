@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { pageStyles } from '../../../assets/style/commen';
-import View from './View';
+import View from './view';
 import AddEdit from './AddEdit';
 import DeleteModel from '../../../utils/defult/DeleteModel';
 
