@@ -4,8 +4,8 @@ import jsconfigPaths from 'vite-jsconfig-paths';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const API_URL = `${env.VITE_APP_BASE_NAME}`;
-  const PORT = `${env.PORT}`;
+  const API_URL = env.VITE_APP_API;
+  const PORT = parseInt(env.PORT) || 2020;
 
   return {
     server: {
@@ -14,17 +14,16 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: {
         '/public': {
-          target: 'http://localhost:5151',
-          // target: 'https://counsel-backend-z72e.onrender.com',
+          target: API_URL,
           changeOrigin: true,
           rewrite: (path) => path,
         },
         '/countries': {
-          // target: 'https://counsel-backend-z72e.onrender.com',
-          target: 'http://localhost:5151',
+          target: API_URL,
           changeOrigin: true,
           rewrite: (path) => path,
         },
+        // Add more API routes as needed
       },
     },
     preview: {
@@ -35,23 +34,9 @@ export default defineConfig(({ mode }) => {
       global: 'window'
     },
     resolve: {
-      alias: [
-        // { find: '', replacement: path.resolve(__dirname, 'src') },
-        // {
-        //   find: /^~(.+)/,
-        //   replacement: path.join(process.cwd(), 'node_modules/$1')
-        // },
-        // {
-        //   find: /^src(.+)/,
-        //   replacement: path.join(process.cwd(), 'src/$1')
-        // }
-        // {
-        //   find: 'assets',
-        //   replacement: path.join(process.cwd(), 'src/assets')
-        // },
-      ]
+      alias: []
     },
-    base: API_URL,
+    base: '/',
     plugins: [react(), jsconfigPaths()]
   };
 });
