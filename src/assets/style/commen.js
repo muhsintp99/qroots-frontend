@@ -1,3 +1,4 @@
+import { display } from "@mui/system";
 
 export const pageStyles = {
     mainBox: {
@@ -171,3 +172,15 @@ export const viewDrawerStyles = {
     }
 
 };
+
+export const fromStar ={
+    star:{
+        color:"#FF0000"
+    },
+    upload:{
+        display:"flex",
+        justifyContent:"center",
+        alignItems:"center",
+        flexDirection:"cloumn"
+    }
+}

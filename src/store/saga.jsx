@@ -16,11 +16,13 @@ import JobActionWatcher from '../pages/container/jobs/saga';
 import CertificateWatcherSaga from '../pages/container/certificate/saga';
 import CouponActionWatcher from '../pages/container/couponCode/saga';
 import PackageActionWatcher from '../pages/container/package/saga';
+import CandidateActionWatcher from '../pages/container/candidate/saga';
 
 function* rootSaga() {
   yield all([
     call(LoginActionWatcher),
     call(UserActionWatcher),
+    call(CandidateActionWatcher),
     call(CountrySagaWatcher),
     call(GalleryActionWatcher),
     call(BlogActionWatcher),

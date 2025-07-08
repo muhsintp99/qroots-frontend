@@ -11,7 +11,8 @@ import { Navigate } from 'react-router';
 // render- Dashboard
 const DashboardDefault = Loadable(lazy(() => import('pages/view/dashboard/default')));
 const Profile = Loadable(lazy(() => import('../layout/Dashboard/Header/HeaderContent/Profile/profile')));
-const Candidates = Loadable(lazy(() => import('../pages/view/support/index')));
+// const Candidates = Loadable(lazy(() => import('../pages/view/support/index')));
+const Candidates = Loadable(lazy(() => import('../pages/view/candidate/index')));
 
 // render - Enquiries
 const Enqiries = Loadable(lazy(() => import('../pages/view/enquries/index')));

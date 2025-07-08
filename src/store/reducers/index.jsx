@@ -4,6 +4,8 @@ import { combineReducers } from 'redux';
 // project import
 import loginReducer from 'container/LoginContainer/slice';
 import usersReducer from '../../pages/auth/users/container/slice';
+import candidatesReducer from '../../pages/container/candidate/slice';
+
 import countryReducer from '../../pages/container/country/slice';
 import galleryReducer from '../../pages/container/gallery/slice'
 import blogReducer from '../../pages/container/blog/slice';
@@ -25,6 +27,7 @@ import menu from './menu';
 const reducers = combineReducers({
     menu,
     login: loginReducer,
+    candidates:candidatesReducer,
     users: usersReducer,
     country: countryReducer,
     gallery: galleryReducer,

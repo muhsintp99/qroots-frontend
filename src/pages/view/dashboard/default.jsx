@@ -330,7 +330,7 @@ import {
   QuestionAnswer,
   School,
   Business,
-  Collections,
+  SupervisedUserCircle,
   Assignment,
   SpaceDashboard,
   RssFeed
@@ -403,6 +403,12 @@ export default function DashboardDefault() {
   // Metrics data
   const metrics = [
     {
+      title: 'Candidate',
+      count: galleriesCount.toString(),
+      icon: SupervisedUserCircle,
+      ...getMetric(galleriesCount, previousData.galleries)
+    },
+    {
       title: 'Enquiries',
       count: enquiryCount.toString(),
       icon: Assignment,
@@ -444,12 +450,7 @@ export default function DashboardDefault() {
       icon: RssFeed,
       ...getMetric(blogsCount, previousData.blogs)
     },
-    {
-      title: 'Gallery',
-      count: galleriesCount.toString(),
-      icon: Collections,
-      ...getMetric(galleriesCount, previousData.galleries)
-    }
+    
   ];
 
   return (
