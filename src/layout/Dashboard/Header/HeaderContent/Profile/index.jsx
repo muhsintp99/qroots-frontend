@@ -128,7 +128,10 @@ export default function Profile() {
                               {fname} {lname}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                              {userType}
+                              {/* {userType} */}
+                              {userType === 'licensee'
+                                ? 'Employees'
+                                : userType.charAt(0).toUpperCase() + userType.slice(1)}
                             </Typography>
                           </Stack>
                         </Stack>

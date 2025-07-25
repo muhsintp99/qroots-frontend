@@ -44,7 +44,7 @@ const Index = () => {
   const [resetForm, setResetForm] = useState(null);
 
   const dispatch = useDispatch();
-  const { candidates, loading } = useSelector((state) => state.candidate || { candidates: [], loading: false });
+  const { candidates, loading } = useSelector((state) => state.candidates || { candidates: [], loading: false });
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -92,28 +92,17 @@ const Index = () => {
   };
 
   const handleSubmitForm = (values, { setSubmitting, resetForm }) => {
-    console.log('Form Values:', values);
-
-    const payload = {
-      email: values.email,
-      mobile: values.mobile,
-      firstName: values.firstName,
-      lastName: values.lastName,
-      dob: values.dob,
-      addressLine1: values.addressLine1,
-      addressLine2: values.addressLine2,
-      city: values.city,
-      district: values.district,
-      state: values.state,
-      zipCode: values.zipCode,
-      country: values.country,
-      image: values.image || values.existingImage,
-    };
+    const formData = new FormData();
+    Object.keys(values).forEach((key) => {
+      if (key !== 'image' || (key === 'image' && values[key])) {
+        formData.append(key, values[key]);
+      }
+    });
 
     if (editData && editData._id) {
-      dispatch(updateCandidate({ id: editData._id, data: payload }));
+      dispatch(updateCandidate({ id: editData._id, data: formData }));
     } else {
-      dispatch(addCandidate(payload));
+      dispatch(addCandidate(formData));
     }
 
     dispatch(getCandidate());
@@ -121,15 +110,12 @@ const Index = () => {
     resetForm();
     setOpenDialog(false);
     setEditData(null);
+    setResetForm(null); // Clear resetForm after submission
   };
 
   const rows = useMemo(() => {
     const validCandidates = Array.isArray(candidates) ? candidates : [];
-    if (!Array.isArray(candidates)) {
-      console.warn('Redux state.candidates is not an array:', candidates);
-    }
     return validCandidates
-      .filter((item) => !item.isDeleted)
       .filter((item) =>
         (item.firstName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.lastName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -139,9 +125,10 @@ const Index = () => {
       .map((item, index) => ({
         ...item,
         id: index + 1 || item._id || '',
-        fullName: `${item.firstName} ${item.lastName}`,
+        fullName: `${item.firstName || ''} ${item.lastName || ''}`.trim() || item.canId || 'Unnamed',
       }));
   }, [candidates, searchQuery]);
+
 
   const memoizedEditData = useMemo(() => editData, [editData]);
 
@@ -219,7 +206,6 @@ const Index = () => {
       <Typography component="p" sx={pageStyles.countList}>
         <span style={{ color: "#234155", fontWeight: 600 }}>{rows.length} {title}</span> are listed below
       </Typography>
-
       <Grid container spacing={2} sx={pageStyles.searchbox}>
         <Grid item xs={12} sm={12} md={8} lg={6}>
           <TextField
@@ -248,8 +234,7 @@ const Index = () => {
             }}
           />
         </Grid>
-
-        <Grid item xs={12} sm={12} md={4} lg={6} sx={pageStyles.newButtonBox}>
+        <Grid item xs={12} sm={12} md={4} lg={6} sx={pageStyles.searchbox}>
           <Button
             variant="contained"
             sx={pageStyles.newButton}
@@ -261,19 +246,16 @@ const Index = () => {
           </Button>
         </Grid>
       </Grid>
-
       {loading && (
         <Typography variant="body2" sx={{ mt: 2 }}>
           Loading candidates...
         </Typography>
       )}
-
       {!loading && rows.length === 0 && (
         <Typography variant="body2" sx={{ mt: 2 }}>
           No candidates found.
         </Typography>
       )}
-
       <StyledDataGrid
         initialState={{
           pagination: {
@@ -285,25 +267,25 @@ const Index = () => {
         columns={columns}
         autoHeight
       />
-
       <AddEdit
         open={openDialog}
         onClose={() => {
-          if (resetForm) resetForm();
+          if (resetForm) {
+            resetForm();
+          }
           setOpenDialog(false);
           setEditData(null);
+          setResetForm(null); // Clear resetForm on close
         }}
         onSubmit={handleSubmitForm}
         editData={memoizedEditData}
-        resetFormCallback={(fn) => setResetForm(fn)}
+        resetFormCallback={setResetForm}
       />
-
       <View
         open={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         data={selectedRow}
       />
-
       <DeleteModel
         open={openDeleteDialog}
         onClose={() => {

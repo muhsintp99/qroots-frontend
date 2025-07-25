@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     server: {
       open: true,
       port: PORT,
-      host: true,
+      host: true,   
       proxy: {
         '/public': {
           target: API_URL,

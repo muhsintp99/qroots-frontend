@@ -1,154 +1,171 @@
-import { takeEvery, call, put, retry } from 'redux-saga/effects';
+import { call, put, takeEvery } from 'redux-saga/effects';
 import { toast } from 'react-toastify';
 import commonApi from '../../../../container/api';
 import config from '../../../../config';
-import * as actions from './slice';
+import {
+  getUsers, getUsersSuccess, getUsersFail,
+  addUser, addUserSuccess, addUserFail,
+  updateUser, updateUserSuccess, updateUserFail,
+  deleteUser, deleteUserSuccess, deleteUserFail,
+  deactivateUser, deactivateUserSuccess, deactivateUserFail,
+  reactivateUserSuccess,
+  reactivateUserFail,
+  reactivateUser,
+} from './slice';
 
-function createUserFormData(payload) {
-  const formData = new FormData();
-  Object.entries(payload).forEach(([key, value]) => {
-    if (key === '_id' || value === null || value === undefined) return;
-    if (value instanceof File) {
-      formData.append(key, value);
-    } else {
-      formData.append(key, JSON.stringify(value));
+function* getUsersSaga({ payload }) {
+  try {
+    const res = yield call(commonApi, {
+      api: `${config.configApi}/users`,
+      method: 'GET',
+      authorization: 'Bearer',
+      successAction: getUsersSuccess,
+      failAction: getUsersFail,
+    });
+    yield put(getUsersSuccess({ users: res.users, count: res.counts }));
+    // yield call(toast.success, 'Users fetched successfully', { autoClose: 3000 });
+  } catch (error) {
+    yield put(getUsersFail(error.message));
+    yield call(toast.error, error.message, { autoClose: 3000 });
+  }
+}
+
+function* addUserSaga({ payload }) {
+  console.log('addUserSaga triggered with payload:', payload);
+  try {
+    const formData = new FormData();
+    formData.append('fname', payload.fname);
+    formData.append('lname', payload.lname);
+    formData.append('email', payload.email);
+    formData.append('mobile', payload.mobile);
+    formData.append('password', payload.password);
+    formData.append('userType', 'licensee');
+    formData.append('status', payload.status);
+    if (payload.image) {
+      formData.append('image', payload.image);
     }
-  });
-  return formData;
-}
 
-function* getUsersSaga(action) {
-  try {
-    const { page = 1, limit = 10 } = action.payload || {};
-    const response = yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users`,
-      method: 'GET',
-      authorization: 'Bearer',
-      body: { page, limit },
-    });
-    yield put(actions.getUsersSuccess({
-      data: response.users || [],
-      count: response.count || 0,
-    }));
-  } catch (error) {
-    const err = error.message || 'Failed to load users';
-    yield put(actions.getUsersFail({ message: err, status: error.status }));
-    toast.error(err);
-  }
-}
-
-function* getUserByIdSaga(action) {
-  try {
-    const response = yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users/${action.payload}`,
-      method: 'GET',
-      authorization: 'Bearer',
-    });
-    yield put(actions.getUserByIdSuccess(response.user));
-  } catch (error) {
-    const err = error.message || 'Failed to fetch user';
-    yield put(actions.getUserByIdFail({ message: err, status: error.status }));
-    toast.error(err);
-  }
-}
-
-function* addUserSaga(action) {
-  try {
-    const formData = createUserFormData(action.payload);
-    const response = yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users`,
+    const res = yield call(commonApi, {
+      api: `${config.configApi}/users/register`,
       method: 'POST',
-      authorization: 'Bearer',
       body: formData,
+      authorization: 'Bearer',
+      successAction: addUserSuccess,
+      failAction: addUserFail,
     });
-    yield put(actions.addUserSuccess({
-      data: response.user,
-      count: response.count || 0,
-    }));
-    toast.success('User added successfully');
+    console.log('API Response:', res.user);
+    yield put(addUserSuccess(res.user));
+    yield call(toast.success, 'Licensee registered successfully', { autoClose: 3000 });
+
+    if (payload.onClose) {
+      yield call(payload.onClose);
+    }
   } catch (error) {
-    const err = error.message || 'Failed to add user';
-    yield put(actions.addUserFail({ message: err, status: error.status }));
-    toast.error(err);
+    yield put(addUserFail(error.message));
+    yield call(toast.error, error.message, { autoClose: 3000 });
   }
 }
 
-function* updateUserSaga(action) {
+function* updateUserSaga({ payload }) {
   try {
-    const { _id, ...updateData } = action.payload;
-    const formData = createUserFormData(updateData);
-    const response = yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users/${_id}`,
+    const { _id, ...data } = payload;
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value) formData.append(key, value);
+    });
+
+    const res = yield call(commonApi, {
+      api: `${config.configApi}/users/update`,
       method: 'PUT',
-      authorization: 'Bearer',
       body: formData,
-    });
-    yield put(actions.updateUserSuccess(response.user));
-    toast.success('User updated successfully');
-  } catch (error) {
-    const err = error.message || 'Failed to update user';
-    yield put(actions.updateUserFail({ message: err, status: error.status }));
-    toast.error(err);
-  }
-}
-
-function* deleteUserSaga(action) {
-  try {
-    const response = yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users/${action.payload}/delete`,
-      method: 'PATCH',
       authorization: 'Bearer',
+      successAction: updateUserSuccess,
+      failAction: updateUserFail,
     });
-    yield put(actions.deleteUserSuccess(response.user));
-    toast.success('User deactivated successfully');
-    yield put(actions.getUsers());
+
+    yield put(updateUserSuccess(res.user));
+    yield call(toast.success, 'User updated successfully', { autoClose: 3000 });
+
+    if (payload.onClose) {
+      yield call(payload.onClose);
+    }
   } catch (error) {
-    const err = error.message || 'Failed to deactivate user';
-    yield put(actions.deleteUserFail({ message: err, status: error.status }));
-    toast.error(err);
+    yield put(updateUserFail(error.message));
+    yield call(toast.error, error.message, { autoClose: 3000 });
   }
 }
 
-function* reactivateUserSaga(action) {
+function* deleteUserSaga({ payload }) {
   try {
-    const response = yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users/${action.payload}/reactivate`,
-      method: 'PATCH',
-      authorization: 'Bearer',
-    });
-    yield put(actions.reactivateUserSuccess(response.user));
-    toast.success('User reactivated successfully');
-    yield put(actions.getUsers());
-  } catch (error) {
-    const err = error.message || 'Failed to reactivate user';
-    yield put(actions.reactivateUserFail({ message: err, status: error.status }));
-    toast.error(err);
-  }
-}
-
-function* hardDeleteUserSaga(action) {
-  try {
-    yield retry(3, 1000, commonApi, {
-      api: `${config.configApi}/users/${action.payload}`,
+    yield call(commonApi, {
+      api: `${config.configApi}/users/${payload.id}`,
       method: 'DELETE',
       authorization: 'Bearer',
+      successAction: deleteUserSuccess,
+      failAction: deleteUserFail,
     });
-    yield put(actions.hardDeleteUserSuccess(action.payload));
-    toast.success('User permanently deleted successfully');
-    yield put(actions.getUsers());
+
+    yield put(deleteUserSuccess(payload.id));
+    yield call(toast.success, 'User permanently deleted', { autoClose: 3000 });
+
+    if (payload.onClose) {
+      yield call(payload.onClose);
+    }
   } catch (error) {
-    const err = error.message || 'Failed to permanently delete user';
-    yield put(actions.hardDeleteUserFail({ message: err, status: error.status }));
-    toast.error(err);
+    yield put(deleteUserFail(error.message));
+    yield call(toast.error, error.message, { autoClose: 3000 });
   }
 }
 
-export default function* UserActionWatcher() {
-  yield takeEvery('users/getUsers', getUsersSaga);
-  yield takeEvery('users/addUser', addUserSaga);
-  yield takeEvery('users/getUserById', getUserByIdSaga);
-  yield takeEvery('users/updateUser', updateUserSaga);
-  yield takeEvery('users/deleteUser', deleteUserSaga);
-  yield takeEvery('users/reactivateUser', reactivateUserSaga);
-  yield takeEvery('users/hardDeleteUser', hardDeleteUserSaga);
+function* deactivateUserSaga({ payload }) {
+  try {
+    const res = yield call(commonApi, {
+      api: `${config.configApi}/users/block/${payload.id}`,
+      method: 'PUT',
+      authorization: 'Bearer',
+      successAction: deactivateUserSuccess,
+      failAction: deactivateUserFail,
+    });
+
+    yield put(deactivateUserSuccess(payload.id));
+    yield call(toast.success, 'User deactivated successfully', { autoClose: 3000 });
+
+    if (payload.onClose) {
+      yield call(payload.onClose);
+    }
+  } catch (error) {
+    yield put(deactivateUserFail(error.message));
+    yield call(toast.error, error.message, { autoClose: 3000 });
+  }
+}
+
+function* reactivateUserSaga({ payload }) {
+  try {
+    const res = yield call(commonApi, {
+      api: `${config.configApi}/users/unblock/${payload.id}`,
+      method: 'PUT',
+      authorization: 'Bearer',
+      successAction: reactivateUserSuccess,
+      failAction: reactivateUserFail,
+    });
+
+    yield put(reactivateUserSuccess(payload.id));
+    yield call(toast.success, 'User reactivated successfully', { autoClose: 3000 });
+
+    if (payload.onClose) {
+      yield call(payload.onClose);
+    }
+  } catch (error) {
+    yield put(reactivateUserFail(error.message));
+    yield call(toast.error, error.message, { autoClose: 3000 });
+  }
+}
+
+export default function* userSagaWatcher() {
+  yield takeEvery(getUsers.type, getUsersSaga);
+  yield takeEvery(addUser.type, addUserSaga);
+  yield takeEvery(updateUser.type, updateUserSaga);
+  yield takeEvery(deleteUser.type, deleteUserSaga);
+  yield takeEvery(deactivateUser.type, deactivateUserSaga);
+  yield takeEvery(reactivateUser.type, reactivateUserSaga);
 }

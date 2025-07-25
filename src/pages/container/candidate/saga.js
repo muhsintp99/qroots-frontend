@@ -14,7 +14,7 @@ function* getCandidateSaga() {
     };
     const response = yield call(commonApi, params);
     console.log('GET Candidate Response:', response);
-    const candidates = response.data || response || [];
+    const candidates = response.candidates || response.data || response || [];
     yield put(actions.getCandidateSuccess(candidates));
   } catch (error) {
     console.error('GET Candidate Error:', error);
@@ -44,28 +44,11 @@ function* getCandidateByIdSaga(action) {
 // ADD Candidate
 function* addCandidateSaga(action) {
   try {
-    console.log('Add Candidate Payload:', action.payload);
-    const { email, mobile, firstName, lastName, dob, addressLine1, addressLine2, city, district, state, zipCode, country, image } = action.payload;
-    const formData = new FormData();
-    formData.append('email', email || '');
-    formData.append('mobile', mobile || '');
-    formData.append('firstName', firstName || '');
-    formData.append('lastName', lastName || '');
-    formData.append('dob', dob || '');
-    formData.append('addressLine1', addressLine1 || '');
-    formData.append('addressLine2', addressLine2 || '');
-    formData.append('city', city || '');
-    formData.append('district', district || '');
-    formData.append('state', state || '');
-    formData.append('zipCode', zipCode || '');
-    formData.append('country', country || '');
-    if (image) {
-      formData.append('image', image);
-    }
-
-    console.log('FormData contents:');
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
+    const formData = action.payload instanceof FormData ? action.payload : new FormData();
+    if (!(action.payload instanceof FormData)) {
+      Object.keys(action.payload).forEach((key) => {
+        formData.append(key, action.payload[key]);
+      });
     }
 
     const params = {

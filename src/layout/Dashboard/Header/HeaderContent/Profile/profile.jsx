@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography, 
-  Avatar, 
-  Paper, 
-  Grid, 
+import {
+  Box,
+  Typography,
+  Avatar,
+  Paper,
+  Grid,
   Divider,
   // Button,
   Container
@@ -19,7 +19,7 @@ const Profile = () => {
   useEffect(() => {
     // Get user data from localStorage
     const adminUser = JSON.parse(localStorage.getItem('adminUser'));
-    
+
     if (adminUser?.success && adminUser?.user) {
       setUserData(adminUser.user);
     } else {
@@ -52,13 +52,17 @@ const Profile = () => {
                 sx={{ width: 150, height: 150, mb: 2 }}
               />
               <Typography variant="h5">{`${userData.fname} ${userData.lname}`}</Typography>
-              <Typography color="text.secondary">{userData.userType}</Typography>
+              {/* <Typography color="text.secondary">{userData.userType}</Typography> */}
+              <Typography color="text.secondary">{userData.userType === 'licensee'
+                ? 'Employees'
+                : userData.userType.charAt(0).toUpperCase() + userData.userType.slice(1)}
+              </Typography>
             </Box>
           </Grid>
 
           <Grid item xs={12} md={8}>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>Personal Information</Typography>
+              <Typography variant="h4" gutterBottom>Personal Information</Typography>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>

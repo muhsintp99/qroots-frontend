@@ -4,127 +4,143 @@ const userSlice = createSlice({
   name: 'users',
   initialState: {
     users: [],
-    selectedUser: null,
     userCount: 0,
     loading: false,
     error: null,
+    isSuccess: false,
+    isError: false,
   },
   reducers: {
-    clearError: (state) => { state.error = null; },
-    clearSelectedUser: (state) => { state.selectedUser = null; },
-    resetState: (state) => {
-      state.users = [];
-      state.selectedUser = null;
-      state.userCount = 0;
-      state.loading = false;
+    getUsers: (state) => {
+      state.loading = true;
       state.error = null;
+      state.isSuccess = false;
+      state.isError = false;
     },
-    addUser: (state) => { state.loading = true; state.error = null; },
-    addUserSuccess: (state, action) => {
-      state.loading = false;
-      state.users.push(action.payload.data);
-      state.userCount = action.payload.count || state.userCount + 1;
-      state.error = null;
-    },
-    addUserFail: (state, action) => { state.loading = false; state.error = action.payload; },
-    getUsers: (state) => { state.loading = true; state.error = null; },
     getUsersSuccess: (state, action) => {
       state.loading = false;
-      state.users = action.payload.data;
-      state.userCount = action.payload.count || action.payload.data.length;
-      state.error = null;
+      state.users = action.payload.users;
+      state.userCount = action.payload.count;
+      state.isSuccess = true;
+      state.isError = false;
     },
-    getUsersFail: (state, action) => { state.loading = false; state.error = action.payload; },
-    getUserById: (state) => { state.loading = true; state.error = null; },
-    getUserByIdSuccess: (state, action) => {
-      state.loading = false;
-      state.selectedUser = action.payload;
-      state.error = null;
-    },
-    getUserByIdFail: (state, action) => {
+    getUsersFail: (state, action) => {
       state.loading = false;
       state.error = action.payload;
-      state.selectedUser = null;
+      state.isSuccess = false;
+      state.isError = true;
     },
-    updateUser: (state) => { state.loading = true; state.error = null; },
+    addUser: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.isSuccess = false;
+      state.isError = false;
+    },
+    addUserSuccess: (state, action) => {
+      state.loading = false;
+      state.users.unshift(action.payload);
+      state.userCount += 1;
+      state.isSuccess = true;
+      state.isError = false;
+    },
+    addUserFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isSuccess = false;
+      state.isError = true;
+    },
+    updateUser: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.isSuccess = false;
+      state.isError = false;
+    },
     updateUserSuccess: (state, action) => {
       state.loading = false;
-      const updated = action.payload;
-      state.users = state.users.map((item) =>
-        item._id === updated._id ? updated : item
-      );
-      if (state.selectedUser?._id === updated._id) {
-        state.selectedUser = updated;
-      }
-      state.error = null;
+      state.users = state.users.map((u) => (u._id === action.payload._id ? action.payload : u));
+      state.isSuccess = true;
+      state.isError = false;
     },
-    updateUserFail: (state, action) => { state.loading = false; state.error = action.payload; },
-    deleteUser: (state) => { state.loading = true; state.error = null; },
+    updateUserFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isSuccess = false;
+      state.isError = true;
+    },
+    deleteUser: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.isSuccess = false;
+      state.isError = false;
+    },
     deleteUserSuccess: (state, action) => {
       state.loading = false;
-      const updated = action.payload;
-      state.users = state.users.map((item) =>
-        item._id === updated._id ? updated : item
-      );
-      state.userCount = Math.max(0, state.userCount - 1);
-      if (state.selectedUser?._id === updated._id) {
-        state.selectedUser = null;
-      }
-      state.error = null;
+      state.users = state.users.filter((u) => u._id !== action.payload);
+      state.userCount -= 1;
+      state.isSuccess = true;
+      state.isError = false;
     },
-    deleteUserFail: (state, action) => { state.loading = false; state.error = action.payload; },
-    reactivateUser: (state) => { state.loading = true; state.error = null; },
+    deleteUserFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isSuccess = false;
+      state.isError = true;
+    },
+    deactivateUser: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.isSuccess = false;
+      state.isError = false;
+    },
+    deactivateUserSuccess: (state, action) => {
+      state.loading = false;
+      state.users = state.users.map((u) =>
+        u._id === action.payload ? { ...u, status: 'blocked', isDeleted: true } : u
+      );
+      state.isSuccess = true;
+      state.isError = false;
+    },
+    deactivateUserFail: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+      state.isSuccess = false;
+      state.isError = true;
+    },
+    reactivateUser: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.isSuccess = false;
+      state.isError = false;
+    },
     reactivateUserSuccess: (state, action) => {
       state.loading = false;
-      const updated = action.payload;
-      state.users = state.users.map((item) =>
-        item._id === updated._id ? updated : item
+      state.users = state.users.map((u) =>
+        u._id === action.payload ? { ...u, status: 'active', isDeleted: false } : u
       );
-      if (state.selectedUser?._id === updated._id) {
-        state.selectedUser = updated;
-      }
-      state.error = null;
+      state.isSuccess = true;
+      state.isError = false;
     },
-    reactivateUserFail: (state, action) => { state.loading = false; state.error = action.payload; },
-    hardDeleteUser: (state) => { state.loading = true; state.error = null; },
-    hardDeleteUserSuccess: (state, action) => {
+    reactivateUserFail: (state, action) => {
       state.loading = false;
-      state.users = state.users.filter((item) => item._id !== action.payload);
-      state.userCount = Math.max(0, state.userCount - 1);
-      if (state.selectedUser?._id === action.payload) {
-        state.selectedUser = null;
-      }
-      state.error = null;
+      state.error = action.payload;
+      state.isSuccess = false;
+      state.isError = true;
     },
-    hardDeleteUserFail: (state, action) => { state.loading = false; state.error = action.payload; },
+    clearError: (state) => {
+      state.error = null;
+      state.isError = false;
+    },
   },
 });
 
 export const {
+  getUsers, getUsersSuccess, getUsersFail,
+  addUser, addUserSuccess, addUserFail,
+  updateUser, updateUserSuccess, updateUserFail,
+  deleteUser, deleteUserSuccess, deleteUserFail,
+  deactivateUser, deactivateUserSuccess, deactivateUserFail,
+  reactivateUser, reactivateUserSuccess, reactivateUserFail,
   clearError,
-  clearSelectedUser,
-  resetState,
-  addUser,
-  addUserSuccess,
-  addUserFail,
-  getUsers,
-  getUsersSuccess,
-  getUsersFail,
-  getUserById,
-  getUserByIdSuccess,
-  getUserByIdFail,
-  updateUser,
-  updateUserSuccess,
-  updateUserFail,
-  deleteUser,
-  deleteUserSuccess,
-  deleteUserFail,
-  reactivateUser,
-  reactivateUserSuccess,
-  reactivateUserFail,
-  hardDeleteUser,
-  hardDeleteUserSuccess,
-  hardDeleteUserFail,
 } = userSlice.actions;
 
 export default userSlice.reducer;

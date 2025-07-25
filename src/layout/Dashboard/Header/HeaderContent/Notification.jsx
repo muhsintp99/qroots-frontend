@@ -28,6 +28,7 @@ import {
   addNotification,
 } from '../../../../pages/container/enquries/slice';
 import FormatDate from '../../../../utils/defult/FormatDate';
+import config from '../../../../config';
 
 const avatarSX = { width: 36, height: 36, fontSize: '1rem' };
 const actionSX = { mt: '6px', ml: 1, top: 'auto', right: 'auto', alignSelf: 'flex-start', transform: 'none' };
@@ -59,7 +60,7 @@ export default function Notification() {
 
   // Setup SSE for real-time updates
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:5151/api/enquiries/stream');
+    const eventSource = new EventSource(`${config.configApi}/api/enquiries/stream`);
     eventSource.addEventListener('newEnquiry', (event) => {
       const data = JSON.parse(event.data);
       dispatch(addNotification({

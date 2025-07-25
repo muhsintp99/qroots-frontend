@@ -23,6 +23,14 @@ const dashboard = {
       icon: icons.Dashboard,
       // breadcrumbs: false
     },
+    // {
+    //   id: 'candidate-dashboard',
+    //   title: 'Dashboard',
+    //   type: 'item',
+    //   url: '/candidate/dashboard',
+    //   icon: icons.Dashboard,
+    //   // breadcrumbs: false
+    // },
     {
       id: 'candidates',
       title: 'Candidates',

@@ -36,7 +36,7 @@ const Blog = Loadable(lazy(() => import('../pages/view/blog/index')));
 const Gallery = Loadable(lazy(() => import('../pages/view/gallery/index')));
 
 // render - Support
-// const MyTeam = Loadable(lazy(() => import('../pages/auth/users/view/index')));
+const MyTeam = Loadable(lazy(() => import('../pages/auth/users/view/index')));
 const Country = Loadable(lazy(() => import('../pages/view/country/index')));
 
 // render - color
@@ -141,10 +141,10 @@ const MainRoutes = {
 
     // ----------Support----
 
-    // {
-    //   path: 'my-team',
-    //   element: <MyTeam />
-    // },
+    {
+      path: 'my-team',
+      element: <MyTeam />
+    },
     {
       path: 'country',
       element: <Country />

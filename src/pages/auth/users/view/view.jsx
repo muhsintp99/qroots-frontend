@@ -1,8 +1,10 @@
+import React from 'react';
 import { Drawer, Typography, Box, IconButton, Grid } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import { viewDrawerStyles } from '../../../../assets/style/commen';
 
-const capitalize = (str) => str?.toLowerCase()?.replace(/\b\w/g, (c) => c.toUpperCase()) || 'N/A';
+const capitalize = (str) => str?.toLowerCase()?.replace(/\b\w/g, (c) => c.toUpperCase()) || '';
 
 const View = ({ open, onClose, data }) => {
   return (
@@ -12,81 +14,99 @@ const View = ({ open, onClose, data }) => {
       onClose={onClose}
       PaperProps={{
         sx: {
-          width: { xs: '90%', sm: '50%', md: '40%' },
-          bgcolor: '#fff',
+          width: {
+            sm: data && Object.keys(data).length > 6 ? '90%' : '50%',
+            md: data && Object.keys(data).length > 6 ? '50%' : '30%',
+          },
         },
       }}
     >
-      <Box sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>User Details</Typography>
-          <IconButton onClick={onClose}>
+      <Box sx={viewDrawerStyles.mainBox}>
+        <Box sx={viewDrawerStyles.head}>
+          <IconButton onClick={onClose} sx={viewDrawerStyles.closeButton}>
             <CloseIcon />
           </IconButton>
+          <Grid sx={viewDrawerStyles.headContent}>
+            <Typography sx={viewDrawerStyles.drawerTitle}>User Details</Typography>
+          </Grid>
         </Box>
 
         {data ? (
-          <Grid container spacing={2}>
+          <Grid container sx={viewDrawerStyles.dataContainer} mt={2}>
             <Grid item xs={12} md={6}>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>First Name</Typography>
-                  <Typography variant="body2">{capitalize(data.fname)}</Typography>
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>Profile Image</strong>
+                  </Typography>
+                  <img
+                    src={data.image}
+                    alt="User"
+                    style={{ maxWidth: '100px', maxHeight: '100px', borderRadius: '4px', marginTop: '4px' }}
+                  />
                 </Box>
               </Box>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Last Name</Typography>
-                  <Typography variant="body2">{capitalize(data.lname)}</Typography>
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>First Name</strong>
+                  </Typography>
+                  <Typography sx={viewDrawerStyles.value}>{capitalize(data.fname)}</Typography>
                 </Box>
               </Box>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Email</Typography>
-                  <Typography variant="body2">{data.email || 'N/A'}</Typography>
-                </Box>
-              </Box>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Mobile</Typography>
-                  <Typography variant="body2">{data.mobile || 'N/A'}</Typography>
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>Last Name</strong>
+                  </Typography>
+                  <Typography sx={viewDrawerStyles.value}>{capitalize(data.lname)}</Typography>
                 </Box>
               </Box>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>User Type</Typography>
-                  <Typography variant="body2">{capitalize(data.userType)}</Typography>
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>Email</strong>
+                  </Typography>
+                  <Typography sx={viewDrawerStyles.value}>{data.email}</Typography>
                 </Box>
               </Box>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Status</Typography>
-                  <Typography variant="body2">{capitalize(data.status)}</Typography>
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>Mobile</strong>
+                  </Typography>
+                  <Typography sx={viewDrawerStyles.value}>{data.mobile}</Typography>
                 </Box>
               </Box>
-              <Box mb={2} display="flex" alignItems="flex-start">
-                <ArrowRightIcon fontSize="small" sx={{ mr: 1 }} />
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Profile Image</Typography>
-                  {data.image ? (
-                    <img src={data.image} alt="User" style={{ width: 50, height: 50, borderRadius: '50%' }} />
-                  ) : (
-                    <Typography variant="body2">No image</Typography>
-                  )}
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>User Type</strong>
+                  </Typography>
+                  <Typography sx={viewDrawerStyles.value}>{capitalize(data.userType)}</Typography>
+                </Box>
+              </Box>
+              <Box mb={2} style={{ display: 'flex' }}>
+                <ArrowRightIcon fontSize="small" />
+                <Box>
+                  <Typography sx={viewDrawerStyles.label}>
+                    <strong>Status</strong>
+                  </Typography>
+                  <Typography sx={viewDrawerStyles.value}>{capitalize(data.status)}</Typography>
                 </Box>
               </Box>
             </Grid>
           </Grid>
         ) : (
-          <Typography sx={{ p: 2 }}>No data available</Typography>
+          <Typography>No data available</Typography>
         )}
       </Box>
     </Drawer>
